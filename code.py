@@ -13,7 +13,7 @@ import digitalio
 from adafruit_hid import keyboard
 from digitalio import DigitalInOut, Direction, Pull
 
-#  Pinout below for Adafruit QT Py board
+#  Pinout below for Pi Pico
 btnswitch1 = digitalio.DigitalInOut(board.GP18)
 btnswitch1.direction = digitalio.Direction.INPUT
 btnswitch1.pull = digitalio.Pull.UP
