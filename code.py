@@ -5,6 +5,7 @@
 #  Logic of the sketch: When headphone is lifted (switch opened), keycode "1" is sent.
 #  When headphone is hung back, keycode "0" is sent.
 #  2022-10-12 David Cinthio, Malmö museer
+#  This version 2026-03-02, David Cinthio, Malmö museum
 
 import time
 import board
