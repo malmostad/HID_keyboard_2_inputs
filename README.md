@@ -39,9 +39,11 @@ Eftersom boot.py döljer USB-disken för att öka stabiliteten, kan du inte se f
 Via kod (i REPL/Thonny):
 
 Python
+```python
 import microcontroller
 microcontroller.on_next_reset(microcontroller.RunMode.BOOTLOADER)
 microcontroller.reset()
+```
 Via hårdvara:
 Om din Pico saknar BOOTSEL-knapp, kortslut TP1 (Test Point 1) mot GND samtidigt som du kopplar in USB-kabeln.
 
