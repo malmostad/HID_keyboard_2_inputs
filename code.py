@@ -14,72 +14,56 @@ import digitalio
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keycode import Keycode
 
-# --- 1. STARTFÖRDRÖJNING ---
-# Vänta 10 sekunder för att låta Linux/Blocks ladda drivrutiner
+# --- INITIALISERING ---
+# Vänta 10 sekunder så att NUC:en hinner boota och ladda USB-drivrutiner
 time.sleep(10)
 
-# --- 2. LÄS DIN keys.conf ---
-def get_config():
-    try:
-        with open("keys.conf", "r") as f:
-            lines = f.readlines()
-            # Rad 1: Pinnar (t.ex. board.GP18,board.GP19)
-            pins_str = lines[0].strip().split(',')
-            # Rad 2: Keycodes (t.ex. Keycode.KEYPAD_ONE,Keycode.KEYPAD_ZERO)
-            keys_str = lines[1].strip().split(',')
-            
-            # Mappa strängar till faktiska objekt
-            pins = [getattr(board, p.split('.')[-1]) for p in pins_str]
-            codes = [getattr(Keycode, k.split('.')[-1]) for k in keys_str]
-            return pins, codes
-    except Exception as e:
-        print(f"Kunde inte läsa keys.conf: {e}")
-        # Standardvärden om filen saknas
-        return [board.GP18, board.GP19], [Keycode.KEYPAD_ONE, Keycode.KEYPAD_ZERO]
-
-target_pins, target_keys = get_config()
-
-# --- 3. SETUP AV PINNAR ---
-btn1 = digitalio.DigitalInOut(target_pins[0])
+# Konfigurera GP18 och GP19 (Hörlur 1 och 2)
+btn1 = digitalio.DigitalInOut(board.GP18)
 btn1.direction = digitalio.Direction.INPUT
 btn1.pull = digitalio.Pull.UP
 
-btn2 = digitalio.DigitalInOut(target_pins[1])
+btn2 = digitalio.DigitalInOut(board.GP19)
 btn2.direction = digitalio.Direction.INPUT
 btn2.pull = digitalio.Pull.UP
 
+# Håll koll på tidigare läge för att bara trigga vid förändring
 prev_state1 = btn1.value
 prev_state2 = btn2.value
 
-# --- 4. HUVUDLOOP MED FELHANTERING ---
+# --- HUVUDLOOP ---
 while True:
     try:
+        # Skapa tangentbordsobjektet (initierar USB HID)
         kbd = Keyboard(usb_hid.devices)
         
         while True:
             cur_state1 = btn1.value
             cur_state2 = btn2.value
             
+            # Har något ändrats?
             if cur_state1 != prev_state1 or cur_state2 != prev_state2:
-                # Logik för PLAY: Om en lur lyfts (True)
-                if (cur_state1 and not prev_state2) or (cur_state2 and not prev_state1):
-                    # Tryck på KEYPAD_ONE (från din conf)
-                    kbd.press(target_keys[0])
-                    time.sleep(0.1)
-                    kbd.release(target_keys[0])
                 
-                # Logik för STOP: Om båda lurarna är nere (False)
-                elif (not cur_state1) and (not cur_state2):
-                    # Tryck på KEYPAD_ZERO (från din conf)
-                    kbd.press(target_keys[1])
-                    time.sleep(0.1)
-                    kbd.release(target_keys[1])
+                # Om BÅDA hörlurarna är nere (GND-slutna = False)
+                if (not cur_state1) and (not cur_state2):
+                    print("Båda nere - Stop")
+                    kbd.release(Keycode.ONE)
+                
+                # Om minst en hörlur lyfts (Brytaren öppnas = True)
+                elif (cur_state1 and not prev_state1) or (cur_state2 and not prev_state2):
+                    print("Hörlur lyft - Play")
+                    kbd.press(Keycode.ONE)
 
+                # Uppdatera tillstånd för nästa varv
                 prev_state1 = cur_state1
                 prev_state2 = cur_state2
             
-            time.sleep(0.05) # Debounce
+            # Debounce: En kort paus för att undvika "elektriskt fladder"
+            time.sleep(0.05)
 
     except Exception as e:
+        # Om USB-anslutningen inte är redo eller tappas, vänta 5 sek och försök igen
+        # Detta hindrar programmet från att krascha helt.
+        time.sleep(5)
         # Om USB-anslutningen svajar, vänta 5 sek och försök igen
         time.sleep(5)
