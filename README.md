@@ -33,6 +33,8 @@ boot.py: Konfigurerar USB-läget.
 
 code.py: Innehåller huvudlogiken och felhanteringen.
 
+/lib: Mappen innehåller nödvändiga bilbliotek för HID.
+
 2. Underhåll (Bootloader-läge)
 Eftersom boot.py döljer USB-disken för att öka stabiliteten, kan du inte se filerna på Picon vid vanlig anslutning. För att gå in i programmeringsläge (så att disken dyker upp):
 
